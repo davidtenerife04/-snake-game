@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SNAKE RETRO</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --panel: #0f0f1a;
+    --green: #39ff14;
+    --green-dim: #1a7a08;
+    --green-glow: rgba(57,255,20,0.35);
+    --red: #ff2244;
+    --amber: #ffb300;
+    --grid: #111120;
+  }
+
+  /* ESTABLECE EL TAMAÑO FIJO DEL POPUP */
+  html, body {
+    width: 450px;
+    height: 650px;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Evita que aparezcan barras de scroll mal posicionadas */
+    background: var(--bg);
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Press Start 2P', monospace;
+    color: var(--green);
+  }
+
+  /* Capas de efecto visual CRT */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(to bottom, transparent 0px, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 4px);
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.75) 100%);
+    pointer-events: none;
+    z-index: 99;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    letter-spacing: 0.3em;
+    text-shadow: 0 0 10px var(--green), 0 0 30px var(--green-glow);
+    margin-bottom: 18px;
+    animation: flicker 4s infinite;
+  }
+
+  @keyframes flicker {
+    0%,98%,100% { opacity: 1; }
+    99% { opacity: 0.7; }
+  }
+
+  .hud {
+    display: flex;
+    gap: 25px;
+    margin-bottom: 14px;
+    font-size: 0.45rem;
+    letter-spacing: 0.1em;
+  }
+
+  .hud span { color: var(--amber); }
+  .hud b { color: var(--green); text-shadow: 0 0 8px var(--green); }
+
+  .arena-wrap {
+    position: relative;
+    border: 2px solid var(--green-dim);
+    box-shadow: 0 0 20px var(--green-glow), inset 0 0 20px rgba(0,0,0,0.5);
+    border-radius: 4px;
+    background: var(--panel);
+  }
+
+  canvas {
+    display: block;
+    image-rendering: pixelated;
+    /* El tamaño del canvas se controla desde el JS, pero aquí aseguramos que quepa */
+    max-width: 100%;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.85);
+    gap: 15px;
+    z-index: 10;
+    text-align: center;
+  }
+
+  .overlay h2 {
+    font-size: 1.1rem;
+    text-shadow: 0 0 16px var(--green);
+    letter-spacing: 0.2em;
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+
+  .overlay .game-over-title {
+    color: var(--red);
+    text-shadow: 0 0 16px var(--red);
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .overlay p {
+    font-size: 0.4rem;
+    color: #aaa;
+    line-height: 1.8;
+  }
+
+  .score-display {
+    font-size: 0.55rem;
+    color: var(--amber);
+  }
+
+  .btn {
+    background: none;
+    border: 2px solid var(--green);
+    color: var(--green);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.55rem;
+    padding: 10px 20px;
+    cursor: pointer;
+    text-shadow: 0 0 8px var(--green);
+    box-shadow: 0 0 10px var(--green-glow);
+    transition: 0.2s;
+  }
+
+  .btn:hover { background: var(--green); color: #000; }
+
+  .controls-hint {
+    margin-top: 15px;
+    font-size: 0.35rem;
+    color: #555;
+    line-height: 2;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>◈ SNAKE ◈</h1>
+
+<div class="hud">
+  <div><span>PUNTOS </span><b id="score">000</b></div>
+  <div><span>RÉCORD </span><b id="best">000</b></div>
+  <div><span>NIVEL </span><b id="level">1</b></div>
+</div>
+
+<div class="arena-wrap">
+  <canvas id="c"></canvas>
+
+  <div class="overlay" id="startScreen">
+    <h2>SNAKE</h2>
+    <p>GUÍA A LA SERPIENTE<br>Y COME PARA CRECER</p>
+    <button class="btn" id="startBtn">▶ INICIAR</button>
+    <div class="controls-hint">
+      WASD / FLECHAS → MOVER<br>
+      P → PAUSA
+    </div>
+  </div>
+
+  <div class="overlay" id="gameOverScreen" style="display:none">
+    <h2 class="game-over-title">GAME OVER</h2>
+    <div class="score-display" id="finalScore"></div>
+    <button class="btn" id="restartBtn">↺ REINICIAR</button>
+  </div>
+
+  <div class="overlay" id="pauseScreen" style="display:none">
+    <h2>PAUSA</h2>
+    <p>PULSA P PARA CONTINUAR</p>
+  </div>
+</div>
+
+<div class="controls-hint" id="mainHint" style="display:none">
+  WASD / FLECHAS → MOVER &nbsp;|&nbsp; P → PAUSA
+</div>
+
+<script src="snake.js"></script>
+
+</body>
+</html>
