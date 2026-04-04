@@ -17,7 +17,7 @@ Una extensión de Chrome que convierte el popup del navegador en una arcade retr
 
 ## Capturas
 
-> _(añade aquí screenshots o un gif del juego)_
+> _(<img width="128" height="128" alt="icon128" src="https://github.com/user-attachments/assets/ebc8fa97-8cda-4cc0-ad1c-b243510df735" />)_
 
 ---
 
