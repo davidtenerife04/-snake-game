@@ -40,7 +40,7 @@ Una extensión de Chrome que convierte el popup del navegador en una arcade retr
 
 1. Clona o descarga este repositorio
 ```bash
-git clone https://github.com/tu-usuario/snake-extension.git
+git clone https://github.com/davidtenerife04/-snake-game.git
 ```
 
 2. Abre Chrome y ve a `chrome://extensions/`
@@ -111,12 +111,11 @@ El récord se guarda automáticamente en `localStorage` bajo la clave `snakeBest
 
 ## Posibles mejoras
 
-- [ ] Publicar en la Chrome Web Store
+- [x] Publicar en la Chrome Web Store
 - [ ] Modo oscuro / diferentes paletas de color
 - [ ] Obstáculos en niveles altos
 - [ ] Tabla de puntuaciones con iniciales
 - [ ] Sonidos 8-bit con Web Audio API
-- [ ] Modo wrap (atravesar paredes)
 
 ---
 
