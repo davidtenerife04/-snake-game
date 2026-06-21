@@ -29,8 +29,11 @@ Una extensión de Chrome que convierte el popup del navegador en una arcade retr
 - **Récord persistente** — guardado en `localStorage`, sobrevive al cierre del navegador
 - **Comida animada** — pulso sinusoidal en tiempo real con glow y highlight interno
 - **Serpiente con degradado** — la cabeza brilla más que la cola, con ojos que miran en la dirección de movimiento
-- **Soporte táctil** — swipe para cambiar de dirección en dispositivos móviles
-- **Pausa** — tecla `P` en cualquier momento
+- **Soporte táctil** — swipe para cambiar de dirección en dispositivos móviles, con D-pad y botón de pausa dedicados
+- **Pausa** — tecla `P` en cualquier momento (o botón ⏸ en móvil)
+- **3 temas de color** — clásico (verde), ámbar y cyberpunk, persistidos en `localStorage`
+- **Tabla de puntuaciones top 5** — con iniciales de 3 letras, guardada en `localStorage`
+- **Cola de inputs** — los giros rápidos de dirección no se pierden entre ticks de juego
 
 ---
 
@@ -112,10 +115,10 @@ El récord se guarda automáticamente en `localStorage` bajo la clave `snakeBest
 ## Posibles mejoras
 
 - [x] Publicar en la Chrome Web Store
-- [ ] Modo oscuro / diferentes paletas de color
-- [ ] Obstáculos en niveles altos
-- [ ] Tabla de puntuaciones con iniciales
-- [ ] Sonidos 8-bit con Web Audio API
+- [x] Modo oscuro / diferentes paletas de color
+- [x] Obstáculos en niveles altos
+- [x] Tabla de puntuaciones con iniciales
+- [x] Sonidos 8-bit con Web Audio API
 
 ---
 

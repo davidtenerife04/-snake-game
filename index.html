@@ -17,6 +17,20 @@
     --amber: #ffb300;
   }
 
+  body[data-theme="amber"] {
+    --green: #ffb300;
+    --green-dim: #7a5700;
+    --green-glow: rgba(255,179,0,0.3);
+    --amber: #39ff14;
+  }
+
+  body[data-theme="cyber"] {
+    --green: #00e5ff;
+    --green-dim: #0a5a66;
+    --green-glow: rgba(0,229,255,0.3);
+    --amber: #ff2bd6;
+  }
+
   html { margin: 0; padding: 0; background: var(--bg); }
 
   /* ── POPUP (por defecto) ── */
@@ -155,7 +169,7 @@
     background: var(--panel);
   }
 
-  canvas { display: block; image-rendering: pixelated; }
+  canvas { display: block; image-rendering: pixelated; touch-action: none; }
 
   /* ── Overlays ── */
   .overlay {
@@ -223,6 +237,53 @@
   }
   .legend span { color: #999; }
 
+  /* ── High scores ── */
+  .hs-list {
+    font-size: 0.36rem;
+    line-height: 2.1;
+    color: #aaa;
+    text-align: left;
+    width: 200px;
+  }
+  body.fs-mode .hs-list { font-size: 0.46rem; width: 260px; }
+  .hs-list .hs-row { display: flex; justify-content: space-between; }
+  .hs-list .hs-row.me { color: var(--amber); text-shadow: 0 0 6px var(--amber); }
+  .hs-list .hs-rank { color: var(--green-dim); width: 22px; }
+
+  .initials-row { display: flex; gap: 6px; align-items: center; }
+  #initialsInput {
+    background: var(--panel);
+    border: 2px solid var(--green);
+    color: var(--green);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.6rem;
+    text-align: center;
+    letter-spacing: 0.3em;
+    width: 70px;
+    padding: 6px 4px;
+    text-transform: uppercase;
+    outline: none;
+    box-shadow: 0 0 10px var(--green-glow);
+  }
+  .btn.small { font-size: 0.4rem; padding: 7px 12px; }
+
+  /* ── Theme selector ── */
+  .theme-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .theme-dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.25);
+    box-shadow: 0 0 8px currentColor;
+    transition: 0.15s;
+  }
+  .theme-dot:hover { transform: scale(1.15); }
+  .theme-dot.active { border-color: #fff; }
+
   .controls-hint {
     margin-top: 8px;
     font-size: 0.3rem; color: #444;
@@ -287,6 +348,11 @@
       <div><span class="dot" style="background:#bb88ff;box-shadow:0 0 6px #bb88ff"></span><span>◈ MODO FANTASMA 7s</span></div>
     </div>
     <div class="controls-hint">WASD / FLECHAS → MOVER &nbsp;|&nbsp; P → PAUSA</div>
+    <div class="theme-row" id="themeRow">
+      <div class="theme-dot" data-theme="classic" style="color:#39ff14;background:#39ff14"></div>
+      <div class="theme-dot" data-theme="amber"   style="color:#ffb300;background:#ffb300"></div>
+      <div class="theme-dot" data-theme="cyber"   style="color:#00e5ff;background:#00e5ff"></div>
+    </div>
   </div>
 
   <!-- GAME OVER -->
@@ -294,6 +360,11 @@
     <h2 class="game-over-title">GAME OVER</h2>
     <div class="score-display" id="finalScore"></div>
     <div class="score-display" id="finalBest" style="font-size:0.38rem;color:#888;margin-top:-4px"></div>
+    <div class="initials-row" id="initialsRow" style="display:none">
+      <input id="initialsInput" maxlength="3" placeholder="AAA">
+      <button class="btn small" id="saveInitialsBtn">GUARDAR</button>
+    </div>
+    <div class="hs-list" id="hsList"></div>
     <button class="btn" id="restartBtn">↺ REINICIAR</button>
   </div>
 
@@ -308,7 +379,7 @@
 <div class="dpad" id="dpad">
   <div class="dpad-btn empty"></div>
   <div class="dpad-btn" id="btnUp">▲</div>
-  <div class="dpad-btn empty"></div>
+  <div class="dpad-btn" id="btnPause">⏸</div>
   <div class="dpad-btn" id="btnLeft">◀</div>
   <div class="dpad-btn empty"></div>
   <div class="dpad-btn" id="btnRight">▶</div>

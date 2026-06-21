@@ -26,12 +26,16 @@ const startScreen   = document.getElementById('startScreen');
 const gameOverScreen= document.getElementById('gameOverScreen');
 const pauseScreen   = document.getElementById('pauseScreen');
 const mainHint      = document.getElementById('mainHint');
+const themeRow      = document.getElementById('themeRow');
+const initialsRow   = document.getElementById('initialsRow');
+const initialsInput = document.getElementById('initialsInput');
+const hsList        = document.getElementById('hsList');
 
 // ─── State machine ──────────────────────────
 let STATE = 'IDLE';
 
 // ─── Game vars ──────────────────────────────
-let snake, dir, nextDir;
+let snake, dir, inputQueue;
 let foods = [], obstacles = [];
 let particles = [], floaties = [];
 let score, best, level, speed, gameLoop;
@@ -45,6 +49,48 @@ let konamiIdx   = 0;
 
 best = parseInt(localStorage.getItem('snakeBest') || '0');
 bestEl.textContent = pad(best);
+
+// ─── Temas visuales ──────────────────────────
+function applyTheme(name) {
+  document.body.setAttribute('data-theme', name === 'classic' ? '' : name);
+  localStorage.setItem('snakeTheme', name);
+  if (themeRow) {
+    [...themeRow.children].forEach(d => d.classList.toggle('active', d.dataset.theme === name));
+  }
+}
+applyTheme(localStorage.getItem('snakeTheme') || 'classic');
+themeRow?.addEventListener('click', e => {
+  const dot = e.target.closest('.theme-dot');
+  if (dot) applyTheme(dot.dataset.theme);
+});
+
+// ─── Tabla de puntuaciones (top 5) ───────────
+const HS_KEY = 'snakeHighScores';
+function loadHighScores() {
+  try { return JSON.parse(localStorage.getItem(HS_KEY)) || []; }
+  catch (e) { return []; }
+}
+function saveHighScores(list) { localStorage.setItem(HS_KEY, JSON.stringify(list)); }
+function qualifiesForHighScore(s) {
+  const list = loadHighScores();
+  return s > 0 && (list.length < 5 || s > list[list.length - 1].score);
+}
+function addHighScore(name, s) {
+  const list = loadHighScores();
+  list.push({ name: (name || 'AAA').toUpperCase().slice(0, 3), score: s });
+  list.sort((a, b) => b.score - a.score);
+  list.splice(5);
+  saveHighScores(list);
+  return list;
+}
+function renderHighScores(highlightScore = null) {
+  const list = loadHighScores();
+  if (!list.length) { hsList.innerHTML = ''; return; }
+  hsList.innerHTML = list.map((e, i) => `
+    <div class="hs-row${e.score === highlightScore ? ' me' : ''}">
+      <span class="hs-rank">${i + 1}.</span><span>${e.name}</span><span>${pad(e.score)}</span>
+    </div>`).join('');
+}
 
 // ─── Konami code ────────────────────────────
 const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown',
@@ -69,6 +115,7 @@ let audioCtx;
 
 function initAudio() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
 }
 
 function beep(freq, type, dur, vol = 0.12, attack = 0, freqEnd = null) {
@@ -242,7 +289,7 @@ class Floaty {
 // ─── Init ────────────────────────────────────
 function init() {
   snake     =[{x:12,y:10},{x:11,y:10},{x:10,y:10}];
-  dir       ={x:1,y:0}; nextDir={x:1,y:0};
+  dir       ={x:1,y:0}; inputQueue=[];
   score=0; level=1; baseSpeed=150; speed=150;
   lives=3; combo=0; lastEatTime=0; comboTimer=0;
   activePowerUp=null; powerUpTimeLeft=0;
@@ -483,7 +530,7 @@ function tick() {
 
   foods=foods.filter(f=>{ if(!f.ttl)return true; return (now-f.born)<f.ttl; });
 
-  dir={...nextDir};
+  dir = inputQueue.length ? inputQueue.shift() : dir;
   let hx=snake[0].x+dir.x, hy=snake[0].y+dir.y;
 
   if (activePowerUp==='GHOST'){
@@ -579,15 +626,24 @@ function handleDeath(){
       finalBestEl.textContent =`RÉCORD: ${best}`;
       gameOverScreen.style.display='flex';
       mainHint.style.display='none';
+      if (qualifiesForHighScore(score)) {
+        initialsRow.style.display='flex';
+        initialsInput.value='';
+        renderHighScores(null);
+        setTimeout(()=>initialsInput.focus(),50);
+      } else {
+        initialsRow.style.display='none';
+        renderHighScores(null);
+      }
     },900);
   } else {
     STATE='DYING';
     playLife();
     setTimeout(()=>{
       snake=[{x:12,y:10},{x:11,y:10},{x:10,y:10}];
-      dir={x:1,y:0}; nextDir={x:1,y:0};
+      dir={x:1,y:0}; inputQueue=[];
       foods=[]; activePowerUp=null; powerUpTimeLeft=0;
-      hidePowerUp(); placeNormalFood();
+      hidePowerUp(); buildObstacles(); placeNormalFood();
       STATE='PLAYING'; resetLoop();
       try{music.setTempo(speed);music.start();}catch(e){}
     },1000);
@@ -618,7 +674,11 @@ const DIR_MAP={
 
 function tryDir(d){
   if (!d||STATE!=='PLAYING') return;
-  if (d.x!==-dir.x||d.y!==-dir.y) nextDir=d;
+  const last = inputQueue.length ? inputQueue[inputQueue.length-1] : dir;
+  if (inputQueue.length>=2) return;
+  if (d.x===last.x&&d.y===last.y) return;        // misma dirección, ignora
+  if (d.x===-last.x&&d.y===-last.y) return;       // 180° respecto a la última encolada, ignora
+  inputQueue.push(d);
 }
 
 document.addEventListener('keydown',e=>{
@@ -630,14 +690,7 @@ document.addEventListener('keydown',e=>{
   if (STATE==='IDLE') return;
 
   if (e.key==='p'||e.key==='P'){
-    if (STATE==='PLAYING'){
-      STATE='PAUSED'; clearInterval(gameLoop);
-      try{music.pause();}catch(e){}
-      pauseScreen.style.display='flex';
-    } else if (STATE==='PAUSED'){
-      STATE='PLAYING'; pauseScreen.style.display='none';
-      resetLoop(); try{music.resume();}catch(e){}
-    }
+    togglePause();
     return;
   }
   const d=DIR_MAP[e.key];
@@ -646,6 +699,7 @@ document.addEventListener('keydown',e=>{
 
 let tx=0,ty=0;
 canvas.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;},{passive:true});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();},{passive:false});
 canvas.addEventListener('touchend',e=>{
   const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
   tryDir(Math.abs(dx)>Math.abs(dy)?(dx>0?{x:1,y:0}:{x:-1,y:0}):(dy>0?{x:0,y:1}:{x:0,y:-1}));
@@ -655,6 +709,27 @@ document.getElementById('btnUp')   ?.addEventListener('click',()=>tryDir({x:0,y:
 document.getElementById('btnDown') ?.addEventListener('click',()=>tryDir({x:0,y:1}));
 document.getElementById('btnLeft') ?.addEventListener('click',()=>tryDir({x:-1,y:0}));
 document.getElementById('btnRight')?.addEventListener('click',()=>tryDir({x:1,y:0}));
+
+function togglePause(){
+  if (STATE==='PLAYING'){
+    STATE='PAUSED'; clearInterval(gameLoop);
+    try{music.pause();}catch(e){}
+    pauseScreen.style.display='flex';
+  } else if (STATE==='PAUSED'){
+    STATE='PLAYING'; pauseScreen.style.display='none';
+    resetLoop(); try{music.resume();}catch(e){}
+  }
+}
+document.getElementById('btnPause')?.addEventListener('click',togglePause);
+
+document.getElementById('saveInitialsBtn')?.addEventListener('click',()=>{
+  addHighScore(initialsInput.value, score);
+  initialsRow.style.display='none';
+  renderHighScores(score);
+});
+initialsInput?.addEventListener('keydown',e=>{
+  if (e.key==='Enter') document.getElementById('saveInitialsBtn').click();
+});
 
 // ─── Botón fullscreen ──────────────────────
 document.getElementById('fsBtn')?.addEventListener('click',()=>{
