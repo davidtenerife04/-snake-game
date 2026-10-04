@@ -1,0 +1,22 @@
+{
+  "extName": { "message": "Retro Snake Game" },
+  "extDesc": { "message": "Snake retro con efecto CRT, power-ups, combos, niveles y música chiptune. Sin anuncios." },
+  "guide1": { "message": "GUÍA A LA SERPIENTE<br>Y COME PARA CRECER" },
+  "btnStart": { "message": "▶ INICIAR" },
+  "legNormal": { "message": "NORMAL — +10 pts" },
+  "legDouble": { "message": "★ DOBLE PUNTOS 6s" },
+  "legSlow": { "message": "❄ CÁMARA LENTA 5s" },
+  "legGhost": { "message": "◈ MODO FANTASMA 7s" },
+  "controlsHint": { "message": "WASD / FLECHAS → MOVER &nbsp;|&nbsp; P → PAUSA &nbsp;|&nbsp; M → SONIDO" },
+  "gameOver": { "message": "GAME OVER" },
+  "btnRestart": { "message": "↺ REINICIAR" },
+  "btnSave": { "message": "GUARDAR" },
+  "pauseTitle": { "message": "PAUSA" },
+  "pauseDesc": { "message": "PULSA P PARA CONTINUAR" },
+  "scoreText": { "message": "PUNTUACIÓN: " },
+  "bestText": { "message": "RÉCORD: " },
+  "newBestFlash": { "message": "★ NUEVO RÉCORD" },
+  "puDoubleName": { "message": "✦ DOBLE PUNTOS ✦" },
+  "puSlowName": { "message": "❄ CÁMARA LENTA ❄" },
+  "puGhostName": { "message": "◈ MODO FANTASMA ◈" }
+}

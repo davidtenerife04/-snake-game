@@ -1,0 +1,22 @@
+{
+  "extName": { "message": "Retro Snake Game" },
+  "extDesc": { "message": "Retro Snake with CRT effect, power-ups, combos, levels, and chiptune music. No ads." },
+  "guide1": { "message": "GUIDE THE SNAKE<br>AND EAT TO GROW" },
+  "btnStart": { "message": "▶ START" },
+  "legNormal": { "message": "NORMAL — +10 pts" },
+  "legDouble": { "message": "★ DOUBLE POINTS 6s" },
+  "legSlow": { "message": "❄ SLOW MOTION 5s" },
+  "legGhost": { "message": "◈ GHOST MODE 7s" },
+  "controlsHint": { "message": "WASD / ARROWS → MOVE &nbsp;|&nbsp; P → PAUSE &nbsp;|&nbsp; M → SOUND" },
+  "gameOver": { "message": "GAME OVER" },
+  "btnRestart": { "message": "↺ RESTART" },
+  "btnSave": { "message": "SAVE" },
+  "pauseTitle": { "message": "PAUSED" },
+  "pauseDesc": { "message": "PRESS P TO CONTINUE" },
+  "scoreText": { "message": "SCORE: " },
+  "bestText": { "message": "BEST: " },
+  "newBestFlash": { "message": "★ NEW RECORD" },
+  "puDoubleName": { "message": "✦ DOUBLE POINTS ✦" },
+  "puSlowName": { "message": "❄ SLOW MOTION ❄" },
+  "puGhostName": { "message": "◈ GHOST MODE ◈" }
+}

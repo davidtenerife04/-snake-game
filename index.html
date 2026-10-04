@@ -5,7 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SNAKE RETRO</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+  @font-face {
+    font-family: 'Press Start 2P';
+    src: url('./press-start-2p.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
 
   :root {
     --bg: #060610;
@@ -36,7 +42,7 @@
   /* ── POPUP (por defecto) ── */
   body {
     width: 520px;
-    height: 740px;
+    height: 600px;
     margin: 0; padding: 0;
     overflow: hidden;
     background: var(--bg);
@@ -116,7 +122,7 @@
   #lives    { color: #ff4466; text-shadow: 0 0 8px rgba(255,68,102,0.5); }
 
   /* ── Botón fullscreen ── */
-  #fsBtn {
+  #fsBtn, #muteBtn {
     position: absolute;
     right: 12px;
     background: none;
@@ -131,7 +137,8 @@
     transition: 0.15s;
     font-family: monospace;
   }
-  #fsBtn:hover {
+  #muteBtn { right: auto; left: 12px; font-size: 0.75rem; }
+  #fsBtn:hover, #muteBtn:hover {
     border-color: var(--green);
     color: var(--green);
     box-shadow: 0 0 10px var(--green-glow);
@@ -168,8 +175,18 @@
     border-radius: 4px;
     background: var(--panel);
   }
+  body.fs-mode .arena-wrap {
+    max-width: 95vw;
+    max-height: 70vh;
+    display: flex;
+  }
 
-  canvas { display: block; image-rendering: pixelated; touch-action: none; }
+  canvas { display: block; touch-action: none; }
+  body.fs-mode canvas {
+    width: 100% !important;
+    height: auto !important;
+    object-fit: contain;
+  }
 
   /* ── Overlays ── */
   .overlay {
@@ -202,8 +219,8 @@
     50%      { opacity: 0.45; }
   }
 
-  .overlay p { font-size: 0.38rem; color: #888; line-height: 2; margin: 0; }
-  body.fs-mode .overlay p { font-size: 0.5rem; }
+  .overlay p { font-size: 10px; color: #888; line-height: 2; margin: 0; }
+  body.fs-mode .overlay p { font-size: 14px; }
 
   .score-display {
     font-size: 0.52rem;
@@ -227,9 +244,10 @@
   }
   .btn:hover { background: var(--green); color: #000; box-shadow: 0 0 25px var(--green-glow); }
   body.fs-mode .btn { font-size: 0.65rem; padding: 12px 28px; }
+  .btn.small { font-size: 0.4rem; padding: 7px 12px; }
 
-  .legend { font-size: 0.3rem; line-height: 2.2; color: #666; margin-top: 4px; }
-  body.fs-mode .legend { font-size: 0.42rem; }
+  .legend { font-size: 10px; line-height: 2.2; color: #666; margin-top: 12px; }
+  body.fs-mode .legend { font-size: 16px; }
   .legend .dot {
     display: inline-block; width: 7px; height: 7px;
     border-radius: 50%; margin-right: 5px;
@@ -237,7 +255,7 @@
   }
   .legend span { color: #999; }
 
-  /* ── High scores ── */
+  /* ── High scores & Modes ── */
   .hs-list {
     font-size: 0.36rem;
     line-height: 2.1;
@@ -265,13 +283,13 @@
     outline: none;
     box-shadow: 0 0 10px var(--green-glow);
   }
-  .btn.small { font-size: 0.4rem; padding: 7px 12px; }
 
-  /* ── Theme selector ── */
+  /* ── Theme & Modes selector ── */
   .theme-row {
     display: flex;
     gap: 10px;
     margin-top: 6px;
+    align-items: center;
   }
   .theme-dot {
     width: 18px; height: 18px;
@@ -284,9 +302,15 @@
   .theme-dot:hover { transform: scale(1.15); }
   .theme-dot.active { border-color: #fff; }
 
+  .modes-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
   .controls-hint {
-    margin-top: 8px;
-    font-size: 0.3rem; color: #444;
+    margin-top: 12px;
+    font-size: 10px; color: #555;
     line-height: 2.2; text-align: center;
   }
 
@@ -313,6 +337,10 @@
     .dpad { display: grid; }
     .controls-hint { display: none; }
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    h1, #powerUpLabel, .overlay h2 { animation: none; }
+  }
 </style>
 </head>
 <body>
@@ -326,6 +354,7 @@
     <div><span>LVL </span><b id="level">1</b></div>
     <div><span>♥ </span><b id="lives">♥♥♥</b></div>
   </div>
+  <button id="muteBtn" title="Sonido (M)">🔊</button>
   <button id="fsBtn" title="Ventana completa">⛶</button>
 </div>
 
@@ -339,15 +368,20 @@
   <!-- START -->
   <div class="overlay" id="startScreen">
     <h2>SNAKE</h2>
-    <p>GUÍA A LA SERPIENTE<br>Y COME PARA CRECER</p>
-    <button class="btn" id="startBtn">▶ INICIAR</button>
+    <p data-i18n="guide1">GUÍA A LA SERPIENTE<br>Y COME PARA CRECER</p>
+    <button class="btn" id="startBtn" data-i18n="btnStart">▶ INICIAR</button>
     <div class="legend">
-      <div><span class="dot" style="background:#ff2244;box-shadow:0 0 6px #ff2244"></span><span>NORMAL — +10 pts</span></div>
-      <div><span class="dot" style="background:#ffd700;box-shadow:0 0 6px #ffd700"></span><span>★ DOBLE PUNTOS 6s</span></div>
-      <div><span class="dot" style="background:#00cfff;box-shadow:0 0 6px #00cfff"></span><span>❄ CÁMARA LENTA 5s</span></div>
-      <div><span class="dot" style="background:#bb88ff;box-shadow:0 0 6px #bb88ff"></span><span>◈ MODO FANTASMA 7s</span></div>
+      <div><span class="dot" style="background:#ff2244;box-shadow:0 0 6px #ff2244"></span><span data-i18n="legNormal">NORMAL — +10 pts</span></div>
+      <div><span class="dot" style="background:#ffd700;box-shadow:0 0 6px #ffd700"></span><span data-i18n="legDouble">★ DOBLE PUNTOS 6s</span></div>
+      <div><span class="dot" style="background:#00cfff;box-shadow:0 0 6px #00cfff"></span><span data-i18n="legSlow">❄ CÁMARA LENTA 5s</span></div>
+      <div><span class="dot" style="background:#bb88ff;box-shadow:0 0 6px #bb88ff"></span><span data-i18n="legGhost">◈ MODO FANTASMA 7s</span></div>
     </div>
-    <div class="controls-hint">WASD / FLECHAS → MOVER &nbsp;|&nbsp; P → PAUSA</div>
+    
+    <div class="modes-row">
+      <button class="btn small" id="btnModeClassic">MODO: NORMAL</button>
+      <button class="btn small" id="btnModeDaily">RETO: LIBRE</button>
+    </div>
+
     <div class="theme-row" id="themeRow">
       <div class="theme-dot" data-theme="classic" style="color:#39ff14;background:#39ff14"></div>
       <div class="theme-dot" data-theme="amber"   style="color:#ffb300;background:#ffb300"></div>
@@ -357,21 +391,21 @@
 
   <!-- GAME OVER -->
   <div class="overlay" id="gameOverScreen" style="display:none">
-    <h2 class="game-over-title">GAME OVER</h2>
+    <h2 class="game-over-title" data-i18n="gameOver">GAME OVER</h2>
     <div class="score-display" id="finalScore"></div>
     <div class="score-display" id="finalBest" style="font-size:0.38rem;color:#888;margin-top:-4px"></div>
     <div class="initials-row" id="initialsRow" style="display:none">
       <input id="initialsInput" maxlength="3" placeholder="AAA">
-      <button class="btn small" id="saveInitialsBtn">GUARDAR</button>
+      <button class="btn small" id="saveInitialsBtn" data-i18n="btnSave">GUARDAR</button>
     </div>
     <div class="hs-list" id="hsList"></div>
-    <button class="btn" id="restartBtn">↺ REINICIAR</button>
+    <button class="btn" id="restartBtn" data-i18n="btnRestart">↺ REINICIAR</button>
   </div>
 
   <!-- PAUSE -->
   <div class="overlay" id="pauseScreen" style="display:none">
-    <h2>PAUSA</h2>
-    <p>PULSA P PARA CONTINUAR</p>
+    <h2 data-i18n="pauseTitle">PAUSA</h2>
+    <p data-i18n="pauseDesc">PULSA P PARA CONTINUAR</p>
   </div>
 </div>
 
@@ -388,8 +422,8 @@
   <div class="dpad-btn empty"></div>
 </div>
 
-<div class="controls-hint" id="mainHint" style="display:none">
-  WASD / FLECHAS → MOVER &nbsp;|&nbsp; P → PAUSA
+<div class="controls-hint" id="mainHint" style="display:none" data-i18n="controlsHint">
+  WASD / FLECHAS → MOVER &nbsp;|&nbsp; P → PAUSA &nbsp;|&nbsp; M → SONIDO
 </div>
 
 <script src="snake.js"></script>

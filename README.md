@@ -23,17 +23,18 @@ Una extensión de Chrome que convierte el popup del navegador en una arcade retr
 
 ## Características
 
-- **Efecto CRT** — scanlines y viñeta radial con CSS puro para una estética retro auténtica
-- **Animaciones fluidas** — bucle de render con `requestAnimationFrame` independiente del tick de juego
-- **Sistema de niveles** — 10 niveles de dificultad; la velocidad aumenta cada 50 puntos
-- **Récord persistente** — guardado en `localStorage`, sobrevive al cierre del navegador
-- **Comida animada** — pulso sinusoidal en tiempo real con glow y highlight interno
-- **Serpiente con degradado** — la cabeza brilla más que la cola, con ojos que miran en la dirección de movimiento
-- **Soporte táctil** — swipe para cambiar de dirección en dispositivos móviles, con D-pad y botón de pausa dedicados
-- **Pausa** — tecla `P` en cualquier momento (o botón ⏸ en móvil)
-- **3 temas de color** — clásico (verde), ámbar y cyberpunk, persistidos en `localStorage`
-- **Tabla de puntuaciones top 5** — con iniciales de 3 letras, guardada en `localStorage`
-- **Cola de inputs** — los giros rápidos de dirección no se pierden entre ticks de juego
+- **Efecto CRT** — scanlines y viñeta radial con CSS puro para una estética retro auténtica.
+- **Animaciones fluidas** — bucle de render con `requestAnimationFrame` independiente del tick de juego.
+- **Progresión de niveles** — 10 niveles de dificultad calculados con la fórmula `1 + Math.floor(score / 60)`. La velocidad del juego aumenta dinámicamente de 150ms a 55ms por tick.
+- **Sistema de vidas** — Cuentas con 3 vidas por partida. Al chocar, pierdes una vida pero conservas tu nivel y puntuación.
+- **Sistema de combos** — Recoger comida rápidamente (en menos de 2.8s) incrementa un multiplicador de puntos hasta llegar a ×8.
+- **Power-Ups especiales** — 
+  * ★ **Doble Puntos (6s):** Multiplica por 2 los puntos obtenidos.
+  * ❄ **Cámara Lenta (5s):** Reduce drásticamente la velocidad de la serpiente para maniobrar mejor.
+  * ◈ **Modo Fantasma (7s):** Te permite atravesar los muros y tu propia cola.
+- **Obstáculos dinámicos** — Generación de muros aleatorios a partir del nivel 3.
+- **Récord persistente y ranking** — Tabla de puntuaciones Top 5 con iniciales (3 letras) y récords guardados en `localStorage`.
+- **Música y efectos** — Motor chiptune propio y efectos de sonido generados con Web Audio API.
 
 ---
 
@@ -58,33 +59,29 @@ git clone https://github.com/davidtenerife04/-snake-game.git
 
 ---
 
-## Controles
+## Controles y Atajos de Teclado
 
-| Acción | Tecla |
+| Acción | Tecla / Atajo |
 |---|---|
-| Mover arriba | `↑` / `W` |
-| Mover abajo | `↓` / `S` |
-| Mover izquierda | `←` / `A` |
-| Mover derecha | `→` / `D` |
-| Pausar / reanudar | `P` |
-| Móvil | Swipe en cualquier dirección |
+| Moverse | `↑` `↓` `←` `→` / `W` `A` `S` `D` |
+| Iniciar / Reiniciar | `Enter` / `Espacio` |
+| Pausar / Reanudar | `P` / `Esc` |
+| Activar / Desactivar Sonido | `M` |
+| Abrir la extensión rápidamente | `Alt` + `Shift` + `S` |
 
 ---
 
 ## Estructura del proyecto
 
-```
+```text
 snake-extension/
-├── manifest.json       # Configuración de la extensión Chrome
-├── index.html          # Popup de la extensión (UI + estilos CRT)
-└── snake.js            # Lógica del juego (motor, físicas, render, controles)
+├── manifest.json          # Configuración de la extensión Chrome (v3)
+├── index.html             # UI del popup, HUD y pantallas de menú
+├── snake.js               # Lógica del motor, físicas, render y audio
+├── press-start-2p.woff2   # Fuente pixel-art local y optimizada (OFL)
+├── OFL.txt                # Licencia de la tipografía
+└── icon16.png, icon48.png, icon128.png # Iconos de la extensión
 ```
-
-### `index.html`
-Contiene toda la interfaz: el canvas de juego, el HUD (puntos, récord, nivel) y las pantallas de inicio, pausa y game over. El efecto CRT se implementa con dos pseudo-elementos CSS (`::before` y `::after`) que aplican scanlines y viñeta radial sin tocar el canvas.
-
-### `snake.js`
-Motor completo del juego. Separa el bucle de lógica (`setInterval` a velocidad variable) del bucle de render (`requestAnimationFrame` a 60fps), lo que permite que la comida pulse suavemente incluso cuando la serpiente no se ha movido. Incluye detección de colisiones, sistema de niveles, controles de teclado y swipe táctil.
 
 ---
 
@@ -92,10 +89,8 @@ Motor completo del juego. Separa el bucle de lógica (`setInterval` a velocidad 
 
 El juego usa **dos bucles independientes**:
 
-- **Tick de lógica** — corre con `setInterval` a una velocidad que va de 150ms (nivel 1) hasta 60ms (nivel 10). Mueve la serpiente, comprueba colisiones y actualiza la puntuación.
-- **Bucle de render** — corre con `requestAnimationFrame` a ~60fps. Redibuja el canvas en cada frame para que animaciones como el pulso de la comida sean fluidas independientemente de la velocidad del juego.
-
-La serpiente se dibuja con degradado de color (cabeza en verde neón, cola más oscura) y la cabeza incluye dos ojos que rotan según la dirección de movimiento.
+- **Tick de lógica** — corre con `setInterval` a una velocidad variable (comienza en 150ms y baja progresivamente hasta 55ms en el nivel 10). Mueve la serpiente, comprueba colisiones, maneja los temporizadores de los power-ups y actualiza la puntuación.
+- **Bucle de render** — corre con `requestAnimationFrame` a ~60fps. Redibuja el canvas en cada frame para que animaciones, como el pulso de la comida, las partículas y los textos flotantes, sean completamente fluidas independientemente de la velocidad de la serpiente.
 
 ---
 
@@ -103,12 +98,12 @@ La serpiente se dibuja con degradado de color (cabeza en verde neón, cola más 
 
 | Evento | Puntos |
 |---|---|
-| Comer (nivel 1) | +10 |
-| Comer (nivel N) | +10 × N |
-| Subir de nivel | cada 50 puntos acumulados |
-| Niveles máximos | 10 |
-
-El récord se guarda automáticamente en `localStorage` bajo la clave `snakeBest`.
+| Comida Normal | +10 × Nivel (× Combo) (× PowerUp) |
+| Comida de Hielo | +15 × Nivel (× Combo) (× PowerUp) |
+| Comida Fantasma | +20 × Nivel (× Combo) (× PowerUp) |
+| Comida Dorada | +25 × Nivel (× Combo) (× PowerUp) |
+| Subir de nivel | Cada 60 puntos acumulados |
+| Multiplicador Combo Max | ×8 (tiempo límite de 2.8s) |
 
 ---
 
